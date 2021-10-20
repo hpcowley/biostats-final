@@ -1,6 +1,6 @@
 ###############################################################################
-# Biostatistics 1 Final Project
-# Create Nursing Home Map
+# Biostatistics 651 Final Project
+# Create Nursing Home COVID-19 Maps
 # October 2021
 # Steps:
 # 1. Housekeeping
@@ -17,9 +17,6 @@ rm(list = ls())
 
 # Set Paths
 setwd('/Users/rcorgel/OneDrive - Johns Hopkins/Bios_140.651_Final/Data')
-data_path <- 'raw/'
-tmp_path <- 'tmp/'
-output_path <- 'output/'
 
 # Load Libraries
 library('tidyverse')
@@ -36,7 +33,7 @@ library('readxl')
 
 # 2. Load data and basic cleaning
 # Load Provider File
-provider <- read.csv(paste(data_path, 'NH_ProviderInfo_Sep2021.csv', sep=""))
+provider <- read.csv('raw/NH_ProviderInfo_Sep2021.csv')
 provider$Federal.Provider.Number <- as.character(provider$Federal.Provider.Number)
 # Make full address variable
 provider$full.address <-paste0(as.character(provider$Provider.Address),", ", 
@@ -51,13 +48,15 @@ provider <- provider[which(provider$Provider.State=='MD'), ]
 
 # 3. Geocoding
 # Set API Key
-register_google(key = 'AIzaSyDtXAJKxd8dbPXuqNkyz-ypVHRElovqGCA')
+# Censored private API key, so this geocode will not run (but saved geocoded data)
+# The saved geocoded data is reloaded before creation of the maps
+register_google(key = '')
 
 # Run the geocode function from ggmap package
 provider <- mutate_geocode(data = provider, location = full.address, output = "more", source = "google")
 
 # 4. Load covid data and basic cleaning
-nh_covid <- read.csv(paste(tmp_path, 'nh_covid_md_base.csv', sep=""))
+nh_covid <- read.csv('tmp/nh_covid_md_base.csv')
 # Keep relevant variables
 nh_covid <- nh_covid[, c('Federal.Provider.Number', 'total.res.cases', 
                          'avg.res.vaccine.rate', 'total.res.cases.p')]
@@ -66,6 +65,10 @@ nh_covid$Federal.Provider.Number <- as.character(nh_covid$Federal.Provider.Numbe
 
 # Join provider and covid data
 provider <- left_join(provider, nh_covid, by= 'Federal.Provider.Number')
+
+# Export geocoded data
+# This row is commented out so geocoded data is not over-writen
+# write.csv(provider, 'tmp/nh_covid_md_geocode.csv', row.names = FALSE)
 
 # 5. Load the shape file and basic cleaning
 spdf <- readOGR( 
@@ -86,13 +89,17 @@ choropleth <- choropleth[which(choropleth$state.fips=='24'), ]
 
 # 6. Create Maps
 # Map of nursing homes by % of cases to bed
+# Reload geocoded provider data so the maps are reproducible
+provider <- read.csv('tmp/nh_covid_md_geocode.csv')
+# Convert total.res.cases.p to be more in line with vaccine rate
+provider$total.res.cases.p <- provider$total.res.cases.p * 100
 nh_covid_map <- ggplot() +
   geom_polygon(data = choropleth, aes(x = long, y = lat, group = group), fill= "grey80", color="white", size=0.05, alpha=4) +
   geom_point(data = provider, aes(x = lon, y = lat, alpha= 0.3, color = total.res.cases.p), size = 2) +
   theme_void() +
   labs(
-    title = "Nursing Homes by Percent of Total Resident Cases to Avg. Beds Occupied",
-    subtitle = "May 2020 - September 2021"
+    title = "",
+    subtitle = ""
   ) +
   scale_colour_viridis_c() +
   theme(
@@ -104,10 +111,10 @@ nh_covid_map <- ggplot() +
     plot.title = element_text(size= 14, color = "#000000", margin = margin(b = 0, t = 1, r = 5, unit = "mm"), face = 'bold', hjust = 0.5),
     plot.subtitle = element_text(size= 12,  color = "#000000", margin = margin(b = 0, t = 1, r = 5, unit = "mm"), face = 'bold', hjust = 0.5),
   ) +
-  guides(alpha = 'none', color = guide_colourbar(title = '% of Cases to Beds', barwidth = 10, barheight = 0.5, direction = "horizontal", nbin = 10)) +
+  guides(alpha = 'none', color = guide_colourbar(title = 'Total COVID-19 Resident Cases / Avg. Number of Occupied Beds (%)', barwidth = 10, barheight = 0.5, direction = "horizontal", nbin = 10)) +
   coord_map() 
 nh_covid_map
-ggsave('output/nh_covid_cases_map.pdf', plot = last_plot())
+ggsave('output/nh_covid_cases_map.png', plot = last_plot())
 
 # Map of nursing homes by vaccine rate
 nh_covid_map2 <- ggplot() +
@@ -115,8 +122,8 @@ nh_covid_map2 <- ggplot() +
   geom_point(data = provider, aes(x = lon, y = lat, alpha= 0.3, color = avg.res.vaccine.rate), size = 2) +
   theme_void() +
   labs(
-    title = "Nursing Homes by Average Resident Vaccine Rate",
-    subtitle = "May 2021 - September 2021"
+    title = "",
+    subtitle = ""
   ) +
   scale_colour_viridis_c(option = "plasma") +
   theme(
@@ -128,7 +135,7 @@ nh_covid_map2 <- ggplot() +
     plot.title = element_text(size= 14, color = "#000000", margin = margin(b = 0, t = 1, r = 5, unit = "mm"), face = 'bold', hjust = 0.5),
     plot.subtitle = element_text(size= 12,  color = "#000000", margin = margin(b = 0, t = 1, r = 5, unit = "mm"), face = 'bold', hjust = 0.5),
   ) +
-  guides(alpha = 'none', color = guide_colourbar(title = 'Resident Vaccine Rate (%)', barwidth = 10, barheight = 0.5, direction = "horizontal", nbin = 10)) +
+  guides(alpha = 'none', color = guide_colourbar(title = 'Average Resident Vaccination Rate (%)', barwidth = 10, barheight = 0.5, direction = "horizontal", nbin = 10)) +
   coord_map() 
 nh_covid_map2
-ggsave('output/nh_covid_vaccine_map.pdf', plot = last_plot())
+ggsave('output/nh_covid_vaccine_map.png', plot = last_plot())

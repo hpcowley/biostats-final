@@ -1,5 +1,5 @@
 ###############################################################################
-# Biostatistics 1 Final Project
+# Biostatistics 651 Final Project
 # Prepare Nursing Home COVID-19 Data
 # October 2021
 # Steps:
@@ -9,8 +9,7 @@
 # 4. Create all cases data
 # 5. Create monthly cases data
 # 6. Create summary data set combining all nursing homes
-# 7. Make summary graphs
-# 8. Export data
+# 7. Export data
 ###############################################################################
 
 # 1. Housekeeping
@@ -19,9 +18,6 @@ rm(list = ls())
 
 # Set Paths
 setwd('/Users/rcorgel/OneDrive - Johns Hopkins/Bios_140.651_Final/Data')
-data_path <- 'raw/'
-tmp_path <- 'tmp/'
-output_path <- 'output/'
 
 # Load Libraries
 library('tidyverse')
@@ -31,8 +27,8 @@ library('zoo')
 
 # 2. Load data and basic cleaning
 # Load Nursing Home COVID-19 Data
-nh_covid_21 <- read.csv(paste(data_path, 'faclevel_2021.csv', sep=""))
-nh_covid_20 <- read.csv(paste(data_path, 'fac_level_2020.csv', sep=""))
+nh_covid_21 <- read.csv('raw/faclevel_2021.csv')
+nh_covid_20 <- read.csv('raw/fac_level_2020.csv')
 
 # Only examine Maryland nursing homes
 nh_covid_md_21 <- nh_covid_21[which(nh_covid_21$Provider.State=='MD'), ]
@@ -211,44 +207,8 @@ nh_covid_md_month_all <- nh_covid_md_month %>%
             avg.res.weekly.vaccine.rate = mean(avg.res.weekly.vaccine.rate.month, na.rm = TRUE),
             avg.staff.weekly.vaccine.rate = mean(avg.staff.weekly.vaccine.rate.month, na.rm = TRUE))
 
-# 7. Make summary graphs
-# Resident Vaccine Rate
-c1 <- rgb(24, 140, 80, max = 255, alpha = 90, names = "a.green")
-h <- hist(nh_covid_md_base$avg.res.vaccine.rate, breaks = 40)
-h$density = h$counts/sum(h$counts)
-plot(h, freq=FALSE, main = 'Average Resident Full Vaccination Rate \nMaryland, May 2021 - Sept 2021', 
-     xlab = 'Resident Vaccine Rate', col = c1)
-
-# Resident COVID-19 Cases / Avg Number of Occupied Beds
-c2 <- rgb(24, 113, 140, max = 255, alpha = 90, names = "a.blue")
-h2 <- hist(nh_covid_md_base$total.res.cases.p, breaks = 40)
-h2$density = h2$counts/sum(h2$counts)
-plot(h2, freq=FALSE, main = 'Percent of Residents with Confirmed COVID-19 Cases \nMaryland, May 2020 - Sept 2021', 
-     xlab = 'Total COVID-19 Resident Cases / Avg. Number of Occupied Beds', col = c2)
-
-# Weekly Cases
-ggplot(nh_covid_md,aes(x=Week.Ending, y=Residents.Weekly.Confirmed.COVID.19, group=Federal.Provider.Number)) + 
-  geom_line(col = 'slateblue', alpha = 0.2) + theme(legend.position="none", 
-  axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1), plot.title = element_text(face = 'bold', hjust = 0.5), 
-  axis.line = element_line(colour = "black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-  panel.border = element_blank(), panel.background = element_blank()) + 
-  scale_x_date(date_breaks = "1 months", date_labels = "%Y-%m") +
-  xlab('') + ylab('Residents Weekly Confirmed COVID-19 Cases') + 
-  labs(title = 'Nursing Home Residents Weekly Confirmed COVID-19 Cases \nMaryland, May 2020 - Sept 2021') 
-ggsave('output/nh_covid_cases_timeseries.pdf', plot = last_plot())
-
-# Lasagna Chart
-ggplot(nh_covid_md,aes(x=Week.Ending, y=Federal.Provider.Number, fill=Residents.Weekly.Confirmed.COVID.19)) + 
-  geom_tile(col = 'white', size = 0) + scale_fill_viridis_c(option = "A" , direction = -1) +
-  scale_x_date(date_breaks = "4 weeks", date_labels = "%m-%d-%y", limits = as.Date(c('2020-05-24','2021-09-16'))) +
-  xlab('') + ylab('Nursing Homes') + 
-  labs(title = 'Nursing Home Residents Weekly Confirmed COVID-19 Cases \nMaryland, May 2020 - Sept 2021') +
-  theme(legend.position='bottom', axis.text.y=element_blank(), axis.ticks.y=element_blank(), axis.text.x = element_text(angle = 90, vjust = 1, hjust=1),
-  plot.title = element_text(face = 'bold', hjust = 0.5))  +
-  guides(fill = guide_colourbar(title = 'Resident Cases by Week', barwidth = 10, barheight = 0.5, direction = "horizontal", nbin = 10)) 
-ggsave('output/nh_covid_cases_lasagna.pdf', plot = last_plot())
-
-# 8. Export data
+# 7. Export data
 # Export data to tmp folder
-write.csv(nh_covid_md_base, paste(tmp_path, 'nh_covid_md_base.csv', sep=""), row.names = FALSE)
-write.csv(nh_covid_md_month, paste(tmp_path, 'nh_covid_md_month.csv', sep=""), row.names = FALSE)
+write.csv(nh_covid_md_base, 'tmp/nh_covid_md_base.csv', row.names = FALSE)
+write.csv(nh_covid_md_month, 'tmp/nh_covid_md_month.csv', row.names = FALSE)
+write.csv(nh_covid_md, 'tmp/nh_covid_md_week.csv', row.names = FALSE)
