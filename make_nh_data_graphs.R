@@ -13,7 +13,7 @@
 rm(list = ls())
 
 # Set Paths
-setwd('/Users/rcorgel/OneDrive - Johns Hopkins/Bios_140.651_Final/Data')
+setwd('...replace with path to folder.../Bios_140.651_Final/Data')
 
 # Load Libraries
 library(tidyverse)
