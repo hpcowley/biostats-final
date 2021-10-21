@@ -1,0 +1,275 @@
+---
+title: 'Exploratory Analysis: Brown Demographics Data'
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+---
+```{r setup_notebook}
+library(tidyverse)
+library(dplyr)
+library(readxl)
+library(ggplot2)
+library(reshape)
+library(tibble)
+library(GGally)
+```
+
+# Data sources & wrangling
+Our main data source is from Brown LTCFocus. LTCFocus data critically supplies demographic information about the nursing homes in our dataset, which may be a critical factor for COVID-19 outcomes. A crosswalk file is used to encode county-codes (FIPS) as human-readable counties.
+
+LTCFocus is sponsored by the National Institute on Aging (1P01AG027296) through a cooperative agreement with the Brown University School of Public Health.
+
+```{r load_data}
+raw_data <- read_excel("./raw data/facility_2019_MDS_new.xlsx") 
+acs <- read_csv("./raw data/census_60_plus/acs_over_60_by_county.csv", skip=1)
+crosswalk <- read.csv("./raw data/ssa_fips_xwalk_mdonly.csv")
+```
+
+First we subset our data to be only our columns of interest and only within the state of Maryland. Our columns of interest are:
+* Zipcode
+* County (which we end up getting via a join wiht the crosswalk)
+* Number of residents
+* Gender breakdown
+* Racial breakdown
+* Percent of residents under the age of 65
+* Percentage of patients with low, medium, and high clinical frailty scores
+* Percent of patients who are walking
+
+Additionally, we keep some helpful columns like the street address, facility name, city, and facility code for the purposes of joining with other data sources. 
+
+```{r subset_raw_data}
+md_data <- filter(raw_data, state=='MD')
+# columns of interest: race/ethnicity, age, gender distribution, percent that are ambulatory, percent high/mid/low CFS (clinical frailty scale)
+data_of_interest <- select(md_data, c(
+  accpt_id, PROV1680, PROV0475, PROV2720, PROV3225, PROV2905, county, nresid,
+  pctfem, pctblack_mds3, pcthisp_mds3, pctwhite_mds3, pctunder65, pctlowcfs, pctmidcfs, pcthighcfs, pctwalking
+  )
+)
+```
+
+Some of those columns are a little difficult to interpret. We rename them thusly:
+```{r rename_columns}
+# want to rename to some easier column names
+data <- dplyr::rename(
+  data_of_interest,
+  id=accpt_id,
+  name=PROV0475,
+  street_address=PROV2720,
+  city=PROV3225,
+  zipcode=PROV2905,
+  pctblack=pctblack_mds3,
+  pcthisp=pcthisp_mds3,
+  pctwhite=pctwhite_mds3,
+  FIPS_nostate=county
+  )
+```
+
+And we merge on our crosswalk file to derive the human-readable county names.
+```{r merge_county_name}
+crosswalk$FIPS_nostate <- substring(
+  crosswalk$FIPS.County.Code, nchar(crosswalk$FIPS.County.Code)-2, nchar(crosswalk$FIPS.County.Code)
+  )
+data <- data %>% 
+  left_join(select(crosswalk, c(FIPS_nostate, County.Name)), by='FIPS_nostate') %>%
+  dplyr::rename(county=County.Name) %>%
+  na.omit()
+```
+
+The ACS data is pulled in to get an understanding of what we might expect in this population as far as income level, since we know that access to nursing care as well as COVID-19 prevention measures have historically been highly dependent on income level.
+
+```{r acs}
+# population of 60+ with poverty status in last 12 months: Estimate!!60 years and over!!POVERTY STATUS IN THE PAST 12 MONTHS!!Population for whom poverty status is determined
+# population 60+ years old: Estimate!!60 years and over!!Total population
+
+acs_select <- acs %>%
+  dplyr::rename(
+    pct_poverty=`Estimate!!60 years and over!!POVERTY STATUS IN THE PAST 12 MONTHS!!Population for whom poverty status is determined!!Below 100 percent of the poverty level`,
+    'county_id'='id'
+  ) %>%
+  select(c(county_id, pct_poverty)) %>%
+  mutate(pct_poverty=as.numeric(pct_poverty))
+
+acs_select$FIPS.County.Code <- as.numeric(substring(acs_select$county_id, 10))
+acs_select <- acs_select %>% 
+  left_join(select(crosswalk, c(FIPS.County.Code, County.Name)), by='FIPS.County.Code') %>%
+  dplyr::rename(county=County.Name)
+
+avg_poverty_rate <- mean(acs_select$pct_poverty, na.rm=TRUE)
+print(avg_poverty_rate)
+
+# 2 counties don't report these data. Although imperfect, we'll replace with the MD average.
+acs_select$pct_poverty[is.na(acs_select$pct_poverty)] <- avg_poverty_rate 
+acs_select <- na.omit(acs_select)
+```
+
+Now we can join the data of interest with our poverty and population data as well.
+```{r join_acs}
+
+acs_select['FIPS_nostate'] <- substring(
+  acs_select$FIPS.County.Code, 3, length(acs_select$FIPS.County.Code)
+  )
+
+acs_subset <- select(acs_select, c(FIPS_nostate, pct_poverty))
+
+final_join <- data %>%
+  left_join(acs_subset, by='FIPS_nostate') %>%
+  dplyr::rename(county_poverty_pct=pct_poverty)
+```
+
+# Exploratory Analysis
+To get a better understanding of the data we're working with, we first start with some exploratory analysis. Here, we'll look at some key features of nursing homes to get a sense of the missingness and how these features may vary depending on county. Examining features by county is useful given that our community transmission information will come in at the county-level.
+
+## Racial analysis
+
+*Percentage of white patients by county*  
+Many counties have a wide range of variability by county in terms of the percentage of patients per home that are white. Baltimore City, unsuprisingly given its demography, has the lowest percentage of white residents with also quite a tight distribution within the county. Many other counties in Maryland have very high percentages of white residents.
+```{r pct_white}
+n_missing <- nrow(data[data$pctwhite=="LNE", ])
+sprintf("Number of missing data points: %s", n_missing)
+plt_white <- ggplot(
+  data[data$pctwhite!="LNE", ],
+  aes(x=county, y=as.numeric(pctwhite))
+) + geom_boxplot(aes())
+plt_white <- plt_white + ggtitle("Percent White Race Per County") + xlab("County") + ylab("Percent White residents")
+plt_white + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+*Percentage of black patients by county*  
+We are not given more fine-grained racial categories outside of white and Black, likely due to the identifying nature of smaller subsets of racial groups. Prince George's and Baltimore City Counties have the highest proportions of Black residents.  
+```{r pct_black}
+n_missing <- nrow(data[data$pctblack=="LNE", ])
+sprintf("Number of missing data points: %s", n_missing)
+plt_black <- ggplot(
+  data[data$pctblack!="LNE", ],
+  aes(x=county, y=as.numeric(pctblack))
+) + geom_boxplot(aes())
+plt_black <- plt_black + ggtitle("Percent Black Race Per County") + xlab("County") + ylab("Percent Black residents")
+plt_black + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+*Percentage of hispanic patients by county*  
+The percentage of Hispanic residents by county are very, very low. Additionally, there is a high degree of missingness in these data. Given this, we will remove this data from analysis.
+
+```{r pct_hisp}
+n_missing <- nrow(data[data$pcthisp=="LNE", ])
+sprintf("Number of missing data points: %s", n_missing)
+plt_hisp <- ggplot(
+  data[data$pcthisp!="LNE", ],
+  aes(x=county, y=as.numeric(pcthisp))
+) + geom_boxplot(aes())
+plt_hisp <- plt_hisp + ggtitle("Percent Hispanic Per County") + xlab("County") + ylab("Percent Hispanic residents")
+plt_hisp + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+**Percent of female residents per county**  
+There appears to be more women than men in the nursing facility no matter what county the facility is in, although it should be noted that this trend may be reversed for individual homes. Note that Baltimore City, for instance, has a very wide distribution of genders.
+```{r pct_female}
+n_missing <- nrow(data[data$pctfem=="LNE", ])
+sprintf("Number of missing data points: %s", n_missing)
+plt_fem <- ggplot(
+  data[data$pctfem!="LNE", ],
+  aes(x=county, y=as.numeric(pctfem))
+) + geom_boxplot(aes())
+plt_fem <- plt_fem + ggtitle("Percent Female Per County") + xlab("County") + ylab("Percent Female residents")
+plt_fem + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+## Age analysis 
+On the whole, nursing home residents tend to be older than 65, with a few noteable exceptions. Average age of residents could be a key variable in this dataset given that it might also proxy for the type of care needed. For instance, more intensive care facilities may be more applicable to the very old. Those who are very old and/or ill may not have as much contact with the outside environment by way of visitors, while the younger or not as ill may have more contact - as one hypothesis. Alternatively, those in the nursing home while very young may be more medically vulnerable and thus experience worse COVID-19 outcomes.
+```{r pct_u65}
+n_missing <- nrow(data[data$pctunder65=="LNE", ])
+sprintf("Number of missing data points: %s", n_missing)
+plt_age <- ggplot(
+  data[data$pctunder65!="LNE", ],
+  aes(x=county, y=as.numeric(pctunder65))
+) + geom_boxplot(aes())
+plt_age <- plt_age + ggtitle("Percent of Residents Under 65 Per County") + xlab("County") + ylab("Percent <65y/o residents")
+plt_age + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+```{r pct_u65_hist}
+plt_age_hist <- ggplot(
+  data[data$pctunder65!="LNE", ],
+  aes(as.numeric(pctunder65))
+) + geom_histogram()
+plt_age_hist <- plt_age_hist + ggtitle("Histogram of Percent of Residents Under 65")
+plt_age_hist
+```
+
+# Clinical Frailty Score
+Plot histogram of individuals with high clinical frailty score.
+```{r pct_hcfs_hist}
+plt_hcfs_hist <- ggplot(
+  data[data$pcthighcfs!="LNE", ],
+  aes(as.numeric(pcthighcfs))
+) + geom_histogram()
+plt_hcfs_hist <- plt_hcfs_hist + ggtitle("Histogram of Percent of Residents With High Clinical Frailty")
+plt_hcfs_hist
+```
+# Percent of Residents Walking
+Plot histogram of individuals with high clinical frailty score.
+```{r pct_walking_hist}
+plt_walking_hist <- ggplot(
+  data[data$pctwalking!="LNE", ],
+  aes(as.numeric(pctwalking))
+) + geom_histogram()
+plt_walking_hist <- plt_walking_hist + ggtitle("Histogram of Percent of Residents Who Are Walking")
+plt_walking_hist
+```
+
+# Ready data for merge
+Variables we'll keep:
+* id
+* city
+* zipcode
+* nresid
+* pctfem
+* pctblack
+* pctwhite
+* pctunder65
+* pcthighcfs
+* county
+* county_poverty_pct
+
+```{r merge_ready_data}
+final_data <- final_join %>%
+  select(
+    c(
+      id,
+      FIPS_nostate,
+      county,
+      zipcode,
+      county_poverty_pct,
+      nresid,
+      pctfem,
+      pctblack,
+      pctwhite,
+      pctunder65,
+      pcthighcfs
+    )
+  ) %>%
+  dplyr::rename(
+    provider.id=id
+  )
+```
+
+# Look at the relationship between the key variables
+```{r pairplot}
+for_plotting <- final_data %>% select(c(county_poverty_pct,
+      nresid,
+      pctfem,
+      pctblack,
+      pctwhite,
+      pctunder65,
+      pcthighcfs))
+# original length of data: 
+
+for_plotting <- na.omit(for_plotting)
+# after dropping nans
+
+df2 <- mutate_all(for_plotting, function(x) as.numeric(as.character(x)))
+ggpairs(df2) #+ geom_point(size=4) 
+ggsave(file="interactions.png", width=10, height=10, dpi=300)
+```
+
+```{r write_final_data}
+write.csv(final_data, "./demographics_poverty_county_join_hpc.csv")
+```
