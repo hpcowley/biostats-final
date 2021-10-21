@@ -1,3 +1,17 @@
+###############################################################################
+# Biostatistics 651 Final Project
+# Create Nursing Home Correlation Matrix
+# October 2021
+# Steps:
+# 1. Housekeeping
+# 2. Load data and clean
+# 3. Make summary graphs
+###############################################################################
+
+# set paths
+setwd('...replace with path to folder.../Bios_140.651_Final/Data')
+
+# 1. Housekeeping
 library(tidyverse)
 library(dplyr)
 library(readxl)
@@ -8,6 +22,7 @@ library(GGally)
 library(ltm)
 library(reshape2)
 
+# 2. Loading data and cleaning
 data <- read_csv("./nursing_home_data.csv")
 
 # Data checks: make sure that cities align
@@ -98,6 +113,7 @@ df <- selected %>% dplyr::select(
   )
 )
 
+# 3. Make correlation matrix
 df <- df %>% mutate_all(
   as.numeric
 ) %>% na.omit(df) 
