@@ -122,7 +122,34 @@ df <- df %>% mutate_all(
 sprintf("Number of homes for analysis: %d", nrow(df))  # we removed nan rows
 sprintf("Original number of homes for analysis: %d", nrow(data))
 
-for_corr <- dplyr::select(df, -c(provider.id))
+for_corr <- dplyr::select(df, -c(provider.id)) %>% dplyr::rename(
+  PctFemalepctfem,
+  PctBlack=pctblack,
+  PctWhite=pctwhite,
+  PctU65=pctunder65,
+  PctHighCFS=pcthighcfs,
+  CountyPovRate=county_poverty_pct,
+  OverallRating=Overall.Rating,
+  HealthInspectRating=Health.Inspection.Rating,     
+  StaffingRating=Staffing.Rating,
+  DailyNurseHrsPerRes=Reported.Total.Nurse.Staffing.Hours.per.Resident.per.Day,
+  HealthSurveyScore=Total.Weighted.Health.Survey.Score,
+  NCitations=citation.count,
+  NInfectionCitations=infection.cit,
+  AvgNResidents=avg.num.residents,
+  AvgBedOccRate=avg.bed.occupancy.rate,
+  AvgResVaxRate=avg.res.vaccine.rate,
+  AvgStaffVaxRate=avg.staff.vaccine.rate,
+  StaffCaseRate=total.staff.cases.p,
+  CountyCOVIDRate=avg_total_rate,   
+  ForProfit=provider_for_profit,
+  MedicareAndMedicaid=provider_type_medicare_medicaid,
+  NoRecentHealthInspct=health_inspection_gt_2_yrs_ago,
+  OwnershipChg=ownership_change_last_12_mo,
+  HasResCouncil=has_resident_council,
+  HasResFamCouncil=has_resident_and_family_council,
+  ResCaseRate=total_res_cases_as_pctage
+)
 
 correlation <- cor(
   data.frame(for_corr),
@@ -154,9 +181,9 @@ corr_plot <- ggplot(
 ) + geom_tile(color = "white")+
   scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
                        midpoint = 0, limit = c(-1,1), space = "Lab", name="Spearman\nCorrelation") + 
-  labs(title = "Correlation Coefficients") +
-  theme(axis.text.x = element_text(angle = 90, vjust = 1, 
-                                   size = 12, hjust = 1)) + coord_fixed()
+  labs(title = "Correlation Coefficients", ylab="", xlab="") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, 
+                                   size = 10, hjust = 1)) + coord_fixed()
 
 ggsave("correlation_matrix.png")
 corr_plot
