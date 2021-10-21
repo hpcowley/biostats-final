@@ -15,7 +15,7 @@ rm(list = ls())
 # Set Paths
 setwd('...replace with path to folder.../Bios_140.651_Final/Data')
 
-# Load Libraries
+# Load libraries
 library(tidyverse)
 library(readxl)
 
@@ -38,9 +38,9 @@ plot(nursing_home_data$infection.cit, nursing_home_data$avg.staff.vaccine.rate,
 # plot of avg staff vaccination vs total res cases 
 staff_vax_vs_pct_cases <- nursing_home_data %>%
   ggplot(aes(avg.staff.vaccine.rate, total.res.cases.p, color=infection.cit))+
-  geom_point(alpha=0.5, size=2)+
+  geom_point(alpha=0.5, size=2)+ theme_bw() +
   labs(x="Average Staff Vaccination Rate", y="% Total Resident Cases", subtitle="scatter plot of avg staff vaccination rate vs total resident cases rate")
-staff_vax_vs_pct_cases
+  print(staff_vax_vs_pct_cases)
 
 # plot of avg staff vaccination vs total res cases and health inspection rating
 nursing_home_data %>%
@@ -73,7 +73,6 @@ graph1a <- nursing_home_data %>%
   labs(x="Percentage of Staff Cases", y="Percentage of Resident Cases", subtitle="Percentage of Staff Cases vs Resident Cases by Health Inspection Rating")
 
 graph1b <- graph1a + labs(color = "Health Inspection Rating")
-graph1b
 
 # plot of % staff vaccination vs % of resident cases and and health inspection rating
 graph2a <- nursing_home_data %>%
@@ -125,20 +124,6 @@ graph5b <- graph5a + labs(color = "Ownership Type") + theme_bw()
 
 print(graph5b)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # plot of % staff vaccination vs % of resident deaths and and infection citations
 graph6a <- nursing_home_data %>%
   ggplot(aes(avg.staff.vaccine.rate, total.res.deaths.recent.p, color=infection.cit))+
@@ -159,8 +144,6 @@ graph7b <- graph7a + labs(color = "Weighted CMS Health Survey Score") + theme_bw
 
 print(graph7b)
 
-
-
 # plot of % res vaccination vs % of resident deaths and total weighted health survey score
 graph8a <- nursing_home_data %>%
   ggplot(aes(avg.res.vaccine.rate, total.res.deaths.recent.p, color=Total.Weighted.Health.Survey.Score))+
@@ -170,7 +153,6 @@ graph8a <- nursing_home_data %>%
 graph8b <- graph8a + labs(color = "Weighted CMS Health Survey Score") + theme_bw()
 
 print(graph8b)
-
 
 # plot of % res vaccination vs % of resident deaths and infection citations
 graph9a <- nursing_home_data %>%
@@ -182,7 +164,6 @@ graph9b <- graph9a + labs(color = "Number of Infection Citations") + theme_bw()
 
 print(graph9b)
 
-
 # plot of % res vaccination vs % of resident deaths and cms weighted health survey score
 graph10a <- nursing_home_data %>%
   ggplot(aes(avg.res.vaccine.rate, total.res.deaths.recent.p, color=Total.Weighted.Health.Survey.Score))+
@@ -193,7 +174,6 @@ graph10b <- graph10a + labs(color = "Weighted CMS Health Survey Score") + theme_
 
 print(graph10b)
 
-
 # plot of % nurse time spent w res vs % of resident deaths and cms weighted health survey score
 graph11a <- nursing_home_data %>%
   ggplot(aes(Adjusted.Total.Nurse.Staffing.Hours.per.Resident.per.Day, total.res.deaths.recent.p, color=Total.Weighted.Health.Survey.Score))+
@@ -203,3 +183,32 @@ graph11a <- nursing_home_data %>%
 graph11b <- graph11a + labs(color = "Weighted CMS Health Survey Score") + theme_bw()
 
 print(graph11b)
+
+# plot of % staff vaccination vs % of resident cases and and infection citations
+graph12a <- nursing_home_data %>%
+  ggplot(aes(avg.staff.vaccine.rate, total.res.cases.recent.p, color=infection.cit))+
+  geom_point(alpha=0.5, size=2)+
+  labs(x="Average Staff Vaccination Rate", y="Percentage of Resident Cases", subtitle="Staff Vaccination Rate vs Percentage Resident Cases by Number of Infection Citations")
+
+graph12b <- graph12a + labs(color = "Number of Infection Citations") + theme_bw()
+
+print(graph12b)
+
+# plot of % staff vaccination vs % of resident cases and and infection citations
+graph12a <- nursing_home_data %>%
+  ggplot(aes(avg.staff.vaccine.rate, total.res.cases.recent.p, color=infection.cit))+
+  geom_point(alpha=0.5, size=2)+
+  labs(x="Average Staff Vaccination Rate", y="Percentage of Resident Cases", subtitle="Staff Vaccination Rate vs Percentage Resident Cases by Number of Infection Citations")
+
+graph12b <- graph12a + labs(color = "Number of Infection Citations") + theme_bw() +theme(
+  legend.position="bottom")
+
+print(graph12b)
+
+# plot of avg staff vaccination vs total res cases 
+staff_vax_vs_pct_cases <- nursing_home_data %>%
+  ggplot(aes(avg.staff.vaccine.rate, total.res.cases.p, color=infection.cit))+
+  geom_point(alpha=0.5, size=2)+ theme_bw() +
+  labs(x="Average Staff Vaccination Rate", y="% Total Resident Cases", subtitle="scatter plot of avg staff vaccination rate vs total resident cases rate") + theme(
+    legend.position="bottom")
+print(staff_vax_vs_pct_cases)
