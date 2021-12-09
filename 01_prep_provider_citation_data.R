@@ -1,7 +1,7 @@
 ###############################################################################
-# Biostatistics 651 Final Project
+# Biostatistics 652 Final Project
 # Prepare Nursing Home Provider and Deficiencies data
-# October 2021
+# December 2021
 # Steps:
 # 1. Housekeeping
 # 2. Load data and basic cleaning

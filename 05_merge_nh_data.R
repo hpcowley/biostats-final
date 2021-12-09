@@ -1,7 +1,7 @@
 ###############################################################################
-# Biostatistics 651 Final Project
+# Biostatistics 652 Final Project
 # Merge together nursing home data and MD COVID-19 data
-# October 2021
+# December 2021
 # Steps:
 # 1. Housekeeping
 # 2. Load all data to be merged

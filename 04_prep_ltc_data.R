@@ -1,7 +1,7 @@
 ###############################################################################
-# Biostatistics 651 Final Project
+# Biostatistics 652 Final Project
 # Prepare Maryland COVID-19 County data
-# October 2021
+# December 2021
 # Steps:
 # 1. Filter data to only MD facilities 
 # 2. Subset to columns of interest for further investigation

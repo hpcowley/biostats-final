@@ -1,7 +1,7 @@
 ###############################################################################
-# Biostatistics 651 Final Project
+# Biostatistics 652 Final Project
 # Prepare Maryland COVID-19 County data
-# October 2021
+# December 2021
 # Steps:
 # 1. Set-up and creating totals variables
 # 2. Reshaping dataset for merging
@@ -35,7 +35,6 @@ library(tidyr)
 
 #Take a look at the data.
 head(md_covid)
-View(md_covid)
 
 #Create a State Total variable (Maryland) that sums all the counties.
 md_covid <- md_covid %>%
