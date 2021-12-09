@@ -17,7 +17,7 @@
 rm(list = ls())
 
 # Set Paths
-setwd('...replace with path to folder.../Bios_140.651_Final/Data')
+setwd('/Users/rcorgel/OneDrive - Johns Hopkins/Bios_140.651_Final/Data')
 
 # Load Libraries
 library('tidyverse')
@@ -34,6 +34,31 @@ nh_covid_20 <- read.csv('raw/fac_level_2020.csv')
 nh_covid_md_21 <- nh_covid_21[which(nh_covid_21$Provider.State=='MD'), ]
 nh_covid_md_20 <- nh_covid_20[which(nh_covid_20$Provider.State=='MD'), ]
 
+# Only keep relevant variables
+nh_covid_md_21 <- nh_covid_md_21[, c('Week.Ending', 'Federal.Provider.Number', 'Provider.Name', 
+                               'Provider.Address', 'Provider.City', 'Provider.State',
+                               'Provider.Zip.Code', 'County', 'Submitted.Data', 
+                               'Passed.Quality.Assurance.Check', 'Residents.Weekly.Confirmed.COVID.19', 
+                               'Residents.Total.Confirmed.COVID.19', 'Residents.Weekly.COVID.19.Deaths',
+                               'Residents.Total.COVID.19.Deaths', 'Number.of.All.Beds', 
+                               'Total.Number.of.Occupied.Beds', 'Staff.Weekly.Confirmed.COVID.19',
+                               'Staff.Total.Confirmed.COVID.19', 'Staff.Weekly.COVID.19.Deaths', 
+                               'Staff.Total.COVID.19.Deaths', 'Shortage.of.Nursing.Staff', 
+                               'Percentage.of.Current.Residents.who.Received.a.Completed.COVID.19.Vaccination.at.Any.Time',
+                               'Percentage.of.Current.Healthcare.Personnel.who.Received.a.Completed.COVID.19.Vaccination.at.Any.Time')]
+
+nh_covid_md_20 <- nh_covid_md_20[, c('Week.Ending', 'Federal.Provider.Number', 'Provider.Name', 
+                               'Provider.Address', 'Provider.City', 'Provider.State',
+                               'Provider.Zip.Code', 'County', 'Submitted.Data', 
+                               'Passed.Quality.Assurance.Check', 'Residents.Weekly.Confirmed.COVID.19', 
+                               'Residents.Total.Confirmed.COVID.19', 'Residents.Weekly.COVID.19.Deaths',
+                               'Residents.Total.COVID.19.Deaths', 'Number.of.All.Beds', 
+                               'Total.Number.of.Occupied.Beds', 'Staff.Weekly.Confirmed.COVID.19',
+                               'Staff.Total.Confirmed.COVID.19', 'Staff.Weekly.COVID.19.Deaths', 
+                               'Staff.Total.COVID.19.Deaths', 'Shortage.of.Nursing.Staff', 
+                               'Percentage.of.Current.Residents.who.Received.a.Completed.COVID.19.Vaccination.at.Any.Time',
+                               'Percentage.of.Current.Healthcare.Personnel.who.Received.a.Completed.COVID.19.Vaccination.at.Any.Time')]
+
 # Append 2020 and 2021 data
 nh_covid_md <- rbind(nh_covid_md_20, nh_covid_md_21)
 
@@ -43,19 +68,6 @@ nh_covid_md <- nh_covid_md[which(nh_covid_md$Passed.Quality.Assurance.Check=='Y'
 
 # Convert Week.Ending to date variable
 nh_covid_md$Week.Ending <- mdy(nh_covid_md$Week.Ending)
-
-# Only keep relevant variables
-nh_covid_md <- nh_covid_md[, c('Week.Ending', 'Federal.Provider.Number', 'Provider.Name', 
-                         'Provider.Address', 'Provider.City', 'Provider.State',
-                         'Provider.Zip.Code', 'County', 'Submitted.Data', 
-                         'Passed.Quality.Assurance.Check', 'Residents.Weekly.Confirmed.COVID.19', 
-                         'Residents.Total.Confirmed.COVID.19', 'Residents.Weekly.COVID.19.Deaths',
-                         'Residents.Total.COVID.19.Deaths', 'Number.of.All.Beds', 
-                         'Total.Number.of.Occupied.Beds', 'Staff.Weekly.Confirmed.COVID.19',
-                         'Staff.Total.Confirmed.COVID.19', 'Staff.Weekly.COVID.19.Deaths', 
-                         'Staff.Total.COVID.19.Deaths', 'Shortage.of.Nursing.Staff', 
-                         'Percentage.of.Current.Residents.who.Received.a.Completed.COVID.19.Vaccination.at.Any.Time',
-                         'Percentage.of.Current.Healthcare.Personnel.who.Received.a.Completed.COVID.19.Vaccination.at.Any.Time')]
 
 # 3. Create recent cases data
 # Restrict to since vaccines were reported (last week of May 2021 onward)
@@ -210,5 +222,6 @@ nh_covid_md_month_all <- nh_covid_md_month %>%
 # 7. Export data
 # Export data to tmp folder
 write.csv(nh_covid_md_base, 'tmp/nh_covid_md_base.csv', row.names = FALSE)
+save(nh_covid_md_base, file = 'tmp/nh_covid_md_base.RData')
 write.csv(nh_covid_md_month, 'tmp/nh_covid_md_month.csv', row.names = FALSE)
 write.csv(nh_covid_md, 'tmp/nh_covid_md_week.csv', row.names = FALSE)

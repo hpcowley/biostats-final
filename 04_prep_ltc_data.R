@@ -18,14 +18,19 @@
 rm(list = ls())
 
 # Set Paths
-setwd('...replace with path to folder.../Bios_140.651_Final/Data')
+setwd('/Users/rcorgel/OneDrive - Johns Hopkins/Bios_140.651_Final/Data')
+
+#Load relevant packages for data preparation.
+library('readxl')
+library('ggplot2')
+library('GGally')
 
 ###############################################################################
 # READ DATA
 ###############################################################################
-raw_data <- read_excel("./raw data/facility_2019_MDS_new.xlsx") 
-acs <- read_csv("./raw data/census_60_plus/acs_over_60_by_county.csv", skip=1)
-crosswalk <- read.csv("./raw data/ssa_fips_xwalk_mdonly.csv")
+raw_data <- read_excel("raw/facility_2019_MDS_new.xlsx") 
+acs <- read_csv("raw/acs_over_60_by_county.csv", skip=1)
+crosswalk <- read.csv("raw/ssa_fips_xwalk_mdonly.csv")
 
 ###############################################################################
 # FILTER TO MD FACILITIES
@@ -118,7 +123,7 @@ plt_white <- ggplot(
 ) + geom_boxplot(aes())
 plt_white <- plt_white + ggtitle("Percent White Race Per County") + xlab("County") + ylab("Percent White residents")
 plt_white + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-ggsave("white_pcts_by_county.png")
+ggsave("output/white_pcts_by_county.png")
 
 # Percentage of black residents by county
 n_missing <- nrow(data[data$pctblack=="LNE", ])
@@ -129,7 +134,7 @@ plt_black <- ggplot(
 ) + geom_boxplot(aes())
 plt_black <- plt_black + ggtitle("Percent Black Race Per County") + xlab("County") + ylab("Percent Black residents")
 plt_black + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-ggsave("black_pcts_by_county.png")
+ggsave("output/black_pcts_by_county.png")
 
 
 # Percentage hispanic residents by county
@@ -141,7 +146,7 @@ plt_hisp <- ggplot(
 ) + geom_boxplot(aes())
 plt_hisp <- plt_hisp + ggtitle("Percent Hispanic Per County") + xlab("County") + ylab("Percent Hispanic residents")
 plt_hisp + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-ggsave("hispanic_pcts_by_county.png")
+ggsave("output/hispanic_pcts_by_county.png")
 
 # Percentage female residents by county
 n_missing <- nrow(data[data$pctfem=="LNE", ])
@@ -152,7 +157,7 @@ plt_fem <- ggplot(
 ) + geom_boxplot(aes())
 plt_fem <- plt_fem + ggtitle("Percent Female Per County") + xlab("County") + ylab("Percent Female residents")
 plt_fem + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-ggsave("female_pcts_by_county.png")
+ggsave("output/female_pcts_by_county.png")
 
 # Percentage of residents under 65 by county
 n_missing <- nrow(data[data$pctunder65=="LNE", ])
@@ -163,7 +168,7 @@ plt_age <- ggplot(
 ) + geom_boxplot(aes())
 plt_age <- plt_age + ggtitle("Percent of Residents Under 65 Per County") + xlab("County") + ylab("Percent <65y/o residents")
 plt_age + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-ggsave("ageU65_pcts_by_county.png")
+ggsave("output/ageU65_pcts_by_county.png")
 
 # And percentage of residents under 65 as a histogram
 plt_age_hist <- ggplot(
@@ -171,7 +176,7 @@ plt_age_hist <- ggplot(
   aes(as.numeric(pctunder65))
 ) + geom_histogram()
 plt_age_hist <- plt_age_hist + ggtitle("Histogram of Percent of Residents Under 65")
-ggsave("ageU65_hist.png")
+ggsave("output/ageU65_hist.png")
 
 # Clinical frailty scores as a histogram
 plt_hcfs_hist <- ggplot(
@@ -179,7 +184,7 @@ plt_hcfs_hist <- ggplot(
   aes(as.numeric(pcthighcfs))
 ) + geom_histogram()
 plt_hcfs_hist <- plt_hcfs_hist + ggtitle("Histogram of Percent of Residents With High Clinical Frailty")
-ggsave("high_cfs_hist.png")
+ggsave("output/high_cfs_hist.png")
 
 # Percent of residents walking as a histogram
 plt_walking_hist <- ggplot(
@@ -187,7 +192,7 @@ plt_walking_hist <- ggplot(
   aes(as.numeric(pctwalking))
 ) + geom_histogram()
 plt_walking_hist <- plt_walking_hist + ggtitle("Histogram of Percent of Residents Who Are Walking")
-ggsave("pct_walking_hist.png")
+ggsave("output/pct_walking_hist.png")
 
 ###############################################################################
 # FINAL VARIABLE DOWN-SELECT
@@ -228,11 +233,10 @@ for_plotting <- na.omit(for_plotting)
 # after dropping nans
 df2 <- mutate_all(for_plotting, function(x) as.numeric(as.character(x)))
 ggpairs(df2) #+ geom_point(size=4) 
-ggsave(file="interactions.png", width=10, height=10, dpi=300)
+ggsave(file="output/interactions.png", width=10, height=10, dpi=300)
 
 ###############################################################################
 # WRITE FINAL DATA
 ###############################################################################
-write.csv(final_data, "./demographics_poverty_county_join_hpc.csv")
-
-
+write.csv(final_data, "tmp/demographics_poverty_county_join_hpc.csv")
+save(final_data, file = 'tmp/demographics_poverty_county_join_hpc.RData')
