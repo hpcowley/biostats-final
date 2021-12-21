@@ -181,7 +181,7 @@ corr_plot <- ggplot(
 ) + geom_tile(color = "white")+
   scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
                        midpoint = 0, limit = c(-1,1), space = "Lab", name="Spearman\nCorrelation") + 
-  labs(title = "Correlation Coefficients", ylab="", xlab="") +
+  labs(title = "Correlation Coefficients", ylab=" ", xlab=" ") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, 
                                    size = 10, hjust = 1)) + coord_fixed()
 
