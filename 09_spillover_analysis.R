@@ -1,3 +1,8 @@
+###############################################################################
+# Biostatistics 652 Final Project
+# Conduct an analysis on the spillover of cases from the community into the nursing home
+# December 2021
+###############################################################################
 
 ################################################################################################################
 #Maryland COVID-19 Rates Data Preparation
@@ -9,9 +14,9 @@ library(tidyr)
 
 rm(list = ls())
 
-dta <- read.csv("/Users/gracegahlon/OneDrive - Johns Hopkins/Bios_140.651_Final/Data/tmp/nursing_home_data.csv")
-mth <- read.csv("/Users/gracegahlon/OneDrive - Johns Hopkins/Bios_140.651_Final/Data/tmp/nh_covid_md_month.csv")
-md_covid <- read.csv("/Users/gracegahlon/OneDrive - Johns Hopkins/Bios_140.651_Final/Data/tmp/newcases_rates_formerge.csv")
+dta <- read.csv("...replace with path to folder.../Bios_140.651_Final/Data/tmp/nursing_home_data.csv")
+mth <- read.csv("...replace with path to folder.../Bios_140.651_Final/Data/tmp/nh_covid_md_month.csv")
+md_covid <- read.csv("...replace with path to folder.../Bios_140.651_Final/Data/tmp/newcases_rates_formerge.csv")
 
 #Linking the monthly nursing home data to the combined CMS file for SSACD code and county name.
 mth <- mth %>%

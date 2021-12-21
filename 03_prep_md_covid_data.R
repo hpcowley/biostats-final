@@ -20,7 +20,7 @@
 rm(list = ls())
 
 # Set Paths
-setwd('/Users/rcorgel/OneDrive - Johns Hopkins/Bios_140.651_Final/Data')
+setwd('...replace with path to folder.../Bios_140.651_Final/Data')
 
 #Read in the Maryland COVID-19 data downloaded from the Maryland Department of Health.
 md_covid <- read.csv("raw/MDCOVID19_CasesByCounty_Dec14.csv")

@@ -1,3 +1,8 @@
+###############################################################################
+# Biostatistics 652 Final Project
+# Examine nursing homes characteristics associated with high/low cases/deaths
+# December 2021
+###############################################################################
 library(tidyverse)
 library(naniar)
 library(ltm)
@@ -10,7 +15,8 @@ library(lme4)
 library(rms)
 library(AICcmodavg)
 library(sjPlot)
-load("./nursing_home_data_clean.rdata")
+setwd('...replace with path to folder.../Bios_140.651_Final/Data')
+load("tmp/nursing_home_data_clean.rdata")
 
 ##
 # Prepare the data for this analysis

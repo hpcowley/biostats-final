@@ -1,9 +1,16 @@
+###############################################################################
+# Biostatistics 652 Final Project
+# Conduct a missingness analysis on the clean data
+# December 2021
+###############################################################################
 library(tidyverse)
 library(naniar)
 library(ltm)
 library(reshape)
 library(dplyr)
-load("./nursing_home_data_clean.rdata")
+
+setwd('...replace with path to folder.../Bios_140.651_Final/Data')
+load("tmp/nursing_home_data_clean.rdata")
 
 # replace values of 'LNE' with nan
 nursing_home_data <- nursing_home_data %>% replace_with_na_all(condition = ~.x == "LNE")
