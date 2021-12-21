@@ -1,7 +1,7 @@
 ###############################################################################
-# Biostatistics 651 Final Project
+# Biostatistics 652 Final Project
 # Prepare Maryland COVID-19 County data
-# October 2021
+# December 2021
 # Steps:
 # 1. Set-up and creating totals variables
 # 2. Reshaping dataset for merging
@@ -20,7 +20,7 @@
 rm(list = ls())
 
 # Set Paths
-setwd('...replace with path to folder.../Bios_140.651_Final/Data')
+setwd('/Users/rcorgel/OneDrive - Johns Hopkins/Bios_140.651_Final/Data')
 
 #Read in the Maryland COVID-19 data downloaded from the Maryland Department of Health.
 library(readr)
@@ -35,7 +35,6 @@ library(tidyr)
 
 #Take a look at the data.
 head(md_covid)
-View(md_covid)
 
 #Create a State Total variable (Maryland) that sums all the counties.
 md_covid <- md_covid %>%
@@ -57,7 +56,7 @@ for (i in 3:28){ #Selects the columns containing the county totals.
 
 #So that we know which counties are which, we rename the loop-generated variables.
 md_covid <- md_covid %>% 
-  rename(Allegany_new = county3,
+  dplyr::rename(Allegany_new = county3,
          Anne_Arundel_new = county4,
          Baltimore_new = county5,
          Baltimore_City_new = county6,
@@ -186,7 +185,7 @@ maryland_census <- maryland_census %>%
   mutate(NAME = str_remove(NAME," County, Maryland")) %>%
   mutate(NAME = str_remove(NAME,", Maryland"))
 maryland_census <- maryland_census %>% 
-  rename(County=NAME,
+  dplyr::rename(County=NAME,
          population=DP05_0001E) 
 maryland_census[24, 1] <- "Baltimore City"
 
@@ -213,7 +212,7 @@ newcases_rates <- left_join(new_cases_md, maryland_census, by="County")
 ssa <- read_csv("raw/ssa_fips_xwalk_mdonly.csv")
 
 ssa <- ssa %>%
-  rename(County = 'County Name')
+  dplyr::rename(County = 'County Name')
 
 ssa$County <- str_to_title(ssa$County)
 
@@ -243,7 +242,7 @@ for (i in 2:20){
 
 #Rename the variables to indicate the month, year, and that the variable is a rate.
 newcases_rates <- newcases_rates %>% 
-  rename(apr2020_rate = rate1,
+  dplyr::rename(apr2020_rate = rate1,
          may2020_rate = rate2,
          june2020_rate = rate3,
          july2020_rate = rate4,
@@ -265,10 +264,11 @@ newcases_rates <- newcases_rates %>%
 
 newcases_rates <- newcases_rates[-23,]
 newcases_rates <- newcases_rates %>%
-  rename(county = County)
+  dplyr::rename(county = County)
 
 ###############################################################################
 # 8. Export
 newcases_rates
 write.csv(newcases_rates, "tmp/newcases_rates_formerge.csv", row.names = FALSE)
+save(newcases_rates, file = 'tmp/newcases_rates_formerge.RData')
 ###############################################################################

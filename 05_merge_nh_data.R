@@ -1,12 +1,13 @@
 ###############################################################################
-# Biostatistics 651 Final Project
+# Biostatistics 652 Final Project
 # Merge together nursing home data and MD COVID-19 data
-# October 2021
+# December 2021
 # Steps:
 # 1. Housekeeping
 # 2. Load all data to be merged
 # 3. Merge data
-# 4. Export data
+# 4. Clean variable names
+# 5. Export data
 ###############################################################################
 
 # 1. Housekeeping
@@ -14,22 +15,44 @@
 rm(list = ls())
 
 # Set Paths
-setwd('...replace with path to folder.../Bios_140.651_Final/Data')
+setwd('/Users/rcorgel/OneDrive - Johns Hopkins/Bios_140.651_Final/Data')
 
 # Load Libraries
 library(tidyverse)
 library(readxl)
+library(janitor)
 
-# 2. Load all data to be merged
+# 2. Load all data to be merged and get rid of some variables
 #read all dfs in
-provider_MD_formerge <- read.csv('tmp/provider_MD_formerge.csv')
-newcases_rates_formerge <- read.csv('tmp/newcases_rates_formerge.csv')
-nh_covid_md_base <- read.csv('tmp/nh_covid_md_base.csv')
-demographics_poverty_county_join_hpc <- read.csv('tmp/hannah/demographics_poverty_county_join_hpc.csv')
+# Provider File and Citations
+load('tmp/provider_MD_formerge.RData')
+provider_MD_formerge <- provider_MD %>% 
+  select(-c(Provider.Phone.Number,
+            Automatic.Sprinkler.Systems.in.All.Required.Areas,
+            Processing.Date))
+# Maryland COVID-19 Data
+load('tmp/newcases_rates_formerge.RData')
+newcases_rates_formerge <- newcases_rates %>%
+  select(-c(county))
+# Nursing Home COVID-19 Data
+load('tmp/nh_covid_md_base.RData')
+nh_covid_md_base <- nh_covid_md_base %>%
+  select(-c(Provider.Name,	
+            Provider.Address,	
+            Provider.City,	
+            Provider.State,	
+            Provider.Zip.Code,	
+            County))
+# Nursing Home Demographics Data
+load('tmp/demographics_poverty_county_join_hpc.RData')
+demographics_poverty_county_join_hpc <- final_data %>%
+  select(-c(FIPS_nostate,
+            county,
+            zipcode))
 
 #change federal.provider.number to provider.id for nh_covid_base
 nh_covid_md_base <- nh_covid_md_base %>% 
-  rename(provider.id = Federal.Provider.Number)
+  dplyr::rename(provider.id = Federal.Provider.Number)
 
 # 3. Merge data
 #merge the provider, demographic data
@@ -52,5 +75,9 @@ nursing_home_data$SSACD <- as.numeric(nursing_home_data$SSACD)
 #merge provider and county data
 nursing_home_data <-left_join(nursing_home_data, newcases_rates_formerge, by = c('SSACD'))
 
-# 4. Export data
-write.csv(nursing_home_data, "tmp/nursing_home_data.csv", row.names = FALSE)
+# 4. Clean variable names
+nursing_home_data <- janitor::clean_names(nursing_home_data, case = 'snake')
+
+# 5. Export data
+write.csv(nursing_home_data, "tmp/nursing_home_data_clean.csv", row.names = FALSE)
+save(nursing_home_data, file = "tmp/nursing_home_data_clean.csv.RData")
