@@ -39,7 +39,7 @@ provider_MD <- provider %>% filter(Provider.State=='MD')
 provider_MD <- provider_MD %>% dplyr::rename(provider.id = Federal.Provider.Number)
 
 #dropping columns with NA values
-provider_MD <- provider_MD %>% select(-c(Average.Number.of.Residents.per.Day.Footnote,
+provider_MD <- provider_MD %>% dplyr::select(-c(Average.Number.of.Residents.per.Day.Footnote,
                                          Special.Focus.Status,
                                          Overall.Rating.Footnote,
                                          Health.Inspection.Rating.Footnote,
@@ -57,7 +57,7 @@ provider_MD <- provider_MD %>% select(-c(Average.Number.of.Residents.per.Day.Foo
 citations_MD <- citations_MD %>% mutate(infection.violation = ifelse(TAG =="880", 1, 0))
 
 #total number of citations per nursing home by federal provider number
-cit_counts <- citations_MD %>% count(PROVNUM, name = 'citation.count')
+cit_counts <- citations_MD %>% dplyr::count(PROVNUM, name = 'citation.count')
 
 #sum of infection control violations per nursing home and put into new df
 cit_counts1 <- citations_MD %>% group_by(PROVNUM) %>%

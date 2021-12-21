@@ -23,9 +23,7 @@ rm(list = ls())
 setwd('/Users/rcorgel/OneDrive - Johns Hopkins/Bios_140.651_Final/Data')
 
 #Read in the Maryland COVID-19 data downloaded from the Maryland Department of Health.
-library(readr)
-MDCOVID19_CasesByCounty_Mar13_20_Oct14_21 <- read_csv("raw/MDCOVID19_CasesByCounty_Mar13-20_Oct14-21.csv")
-md_covid <- MDCOVID19_CasesByCounty_Mar13_20_Oct14_21
+md_covid <- read.csv("raw/MDCOVID19_CasesByCounty_Dec14.csv")
 
 #Load relevant packages for data preparation.
 library(dplyr)
@@ -40,7 +38,7 @@ head(md_covid)
 md_covid <- md_covid %>%
   rowwise() %>%
   mutate(Maryland = sum(c(Allegany, Anne_Arundel, Baltimore, Baltimore_City, Calvert, Caroline, Carroll, Cecil, Charles, Dorchester, Frederick, Garrett, Harford, Howard, Kent, Montgomery, Prince_Georges, Queen_Annes, Somerset, St_Marys, Talbot, Washington, Wicomico, Worcester, Unknown), na.rm=TRUE))
-md_covid <- data_frame(md_covid)
+md_covid <- tibble(md_covid)
 
 #R does not recognize the raw data as containing dates, so we need to convert DATE to a date-time variable using lubridate.
 md_covid <- md_covid %>%
@@ -139,9 +137,11 @@ wide_monthly <- wide_md_covid_bydate %>%
   mutate(june2021 = rowSums(wide_md_covid_bydate[445:474])) %>%
   mutate(july2021 = rowSums(wide_md_covid_bydate[475:505])) %>%
   mutate(aug2021 = rowSums(wide_md_covid_bydate[506:536])) %>%
-  mutate(sept2021 =rowSums(wide_md_covid_bydate[537:566]))
+  mutate(sept2021 = rowSums(wide_md_covid_bydate[537:566])) %>%
+  mutate(oct2021 = rowSums(wide_md_covid_bydate[567:597])) %>%
+  mutate(nov2021 = rowSums(wide_md_covid_bydate[598:627]))
 
-wide_monthly <- wide_monthly[-(2:570)]
+wide_monthly <- wide_monthly[-(2:631)]
 
 ###############################################################################
 # 4. New cases only file
@@ -166,14 +166,16 @@ new_cases_md[21, 1] <- "St. Mary's"
 new_cases_md <- data_frame(new_cases_md)
 new_cases_md <- new_cases_md %>%
   rowwise() %>%
-  mutate(avg_total = mean(c(apr2020, may2020, june2020, july2020, aug2020, sept2020, oct2020, nov2020, dec2020, jan2021, feb2021, mar2021, apr2021, may2021, june2021, july2021, aug2021, sept2021), na.rm=TRUE))
+  mutate(avg_total = mean(c(apr2020, may2020, june2020, july2020, aug2020, sept2020, oct2020, nov2020,
+                            dec2020, jan2021, feb2021, mar2021, apr2021, may2021, june2021, july2021,
+                            aug2021, sept2021, oct2021, nov2021), na.rm=TRUE))
 
 ###############################################################################
 # 5. Cleaning and merging with Census data for the county-level rates (denominator)
 ###############################################################################
 
 #Merging Census county-level populations for a rate denominator. Data was obtained from the 2019 American Community Survey 5-year estimates.
-maryland_census <- read_csv("raw/ACSDP5Y2019/ACSDP5Y2019.DP05_data_with_overlays_2021-10-11T195203.csv")
+maryland_census <- read.csv("raw/ACSDP5Y2019/ACSDP5Y2019.DP05_data_with_overlays_2021-10-11T195203.csv")
 
 #Selecting relevant variables.
 maryland_census <- maryland_census[-c(4:358)]
@@ -209,20 +211,20 @@ newcases_rates <- left_join(new_cases_md, maryland_census, by="County")
 ###############################################################################
 
 #Reading in the SSA-FIP Crosswalk.
-ssa <- read_csv("raw/ssa_fips_xwalk_mdonly.csv")
+ssa <- read.csv("raw/ssa_fips_xwalk_mdonly.csv")
 
 ssa <- ssa %>%
-  dplyr::rename(County = 'County Name')
+  dplyr::rename(County = 'County.Name')
 
 ssa$County <- str_to_title(ssa$County)
 
-ssa[17, 1] <- "Prince George's"
-ssa[18, 1] <- "Queen Anne's"
-ssa[19, 1] <- "St. Mary's"
-ssa[25, 1] <- "Maryland"
+ssa[17, 7] <- "Prince George's"
+ssa[18, 7] <- "Queen Anne's"
+ssa[19, 7] <- "St. Mary's"
+ssa[25, 7] <- "Maryland"
 
 ssa <- ssa %>%
-  select(c(County, SSACD))
+  dplyr::select(c(County, SSACD))
 
 newcases_rates <- left_join(newcases_rates, ssa, by="County")
 
@@ -233,7 +235,7 @@ newcases_rates <- newcases_rates[-2]
 ###############################################################################
 
 #Create variables in a loop for rates by month in each county and for the state of Maryland.
-for (i in 2:20){
+for (i in 2:22){
   newcases_rates <- newcases_rates %>%
     print(i)
   c <- paste("rate", i-1, sep="")
@@ -260,7 +262,9 @@ newcases_rates <- newcases_rates %>%
          july2021_rate = rate16,
          aug2021_rate = rate17,
          sept2021_rate = rate18,
-         avg_total_rate = rate19)
+         oct2021_rate = rate19,
+         nov2021_rate = rate20,
+         avg_total_rate = rate21)
 
 newcases_rates <- newcases_rates[-23,]
 newcases_rates <- newcases_rates %>%

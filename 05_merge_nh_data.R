@@ -27,17 +27,17 @@ library(janitor)
 # Provider File and Citations
 load('tmp/provider_MD_formerge.RData')
 provider_MD_formerge <- provider_MD %>% 
-  select(-c(Provider.Phone.Number,
+  dplyr::select(-c(Provider.Phone.Number,
             Automatic.Sprinkler.Systems.in.All.Required.Areas,
             Processing.Date))
 # Maryland COVID-19 Data
 load('tmp/newcases_rates_formerge.RData')
 newcases_rates_formerge <- newcases_rates %>%
-  select(-c(county))
+  dplyr::select(-c(county))
 # Nursing Home COVID-19 Data
 load('tmp/nh_covid_md_base.RData')
 nh_covid_md_base <- nh_covid_md_base %>%
-  select(-c(Provider.Name,	
+  dplyr::select(-c(Provider.Name,	
             Provider.Address,	
             Provider.City,	
             Provider.State,	
@@ -46,7 +46,7 @@ nh_covid_md_base <- nh_covid_md_base %>%
 # Nursing Home Demographics Data
 load('tmp/demographics_poverty_county_join_hpc.RData')
 demographics_poverty_county_join_hpc <- final_data %>%
-  select(-c(FIPS_nostate,
+  dplyr::select(-c(FIPS_nostate,
             county,
             zipcode))
 
@@ -68,16 +68,28 @@ nursing_home_data$Provider.SSA.County.Code <- paste("21", nursing_home_data$Prov
 
 #rename column to SSACD
 nursing_home_data <- nursing_home_data %>% 
-  rename(SSACD = Provider.SSA.County.Code)
+  dplyr::rename(SSACD = Provider.SSA.County.Code)
 #change from character to numeric
 nursing_home_data$SSACD <- as.numeric(nursing_home_data$SSACD)
 
 #merge provider and county data
 nursing_home_data <-left_join(nursing_home_data, newcases_rates_formerge, by = c('SSACD'))
 
+# Merge ACS Data
+# Re Merge this data
+nursing_home_data$county_poverty_pct <- NULL
+load('tmp/acs_subset.RData')
+acs_subset$SSACD <- as.numeric(acs_subset$SSACD)
+nursing_home_data <-left_join(nursing_home_data, acs_subset, by = c('SSACD'))
+# St. Mary's county was excluded for some reason, adding it back in
+nursing_home_data$pct_poverty <- ifelse(is.na(nursing_home_data$pct_poverty), 8.400000, nursing_home_data$pct_poverty)
+# Rename
+nursing_home_data$county_poverty_pct <- nursing_home_data$pct_poverty
+nursing_home_data$pct_poverty <- NULL
+
 # 4. Clean variable names
 nursing_home_data <- janitor::clean_names(nursing_home_data, case = 'snake')
 
 # 5. Export data
 write.csv(nursing_home_data, "tmp/nursing_home_data_clean.csv", row.names = FALSE)
-save(nursing_home_data, file = "tmp/nursing_home_data_clean.csv.RData")
+save(nursing_home_data, file = "tmp/nursing_home_data_clean.RData")

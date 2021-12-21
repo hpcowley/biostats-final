@@ -6,6 +6,7 @@
 # 1. Housekeeping
 # 2. Load data and basic cleaning
 # 3. Create recent cases data
+# 3.5. Create very recent cases data
 # 4. Create all cases data
 # 5. Create monthly cases data
 # 6. Create summary data set combining all nursing homes
@@ -24,11 +25,13 @@ library('tidyverse')
 library('assertr')
 library('lubridate')
 library('zoo')
+library('readxl')
 
 # 2. Load data and basic cleaning
 # Load Nursing Home COVID-19 Data
 nh_covid_21 <- read.csv('raw/faclevel_2021.csv')
 nh_covid_20 <- read.csv('raw/fac_level_2020.csv')
+booster <- read_excel('raw/covid-19 nursing home resident and staff vaccination rates.xlsx', range = 'A4:W15254')
 
 # Only examine Maryland nursing homes
 nh_covid_md_21 <- nh_covid_21[which(nh_covid_21$Provider.State=='MD'), ]
@@ -106,6 +109,43 @@ for (i in loop_list_recent) {
   nh_covid_md_recent[, new_var] = nh_covid_md_recent[, paste(i)] / nh_covid_md_recent[, 'avg.number.of.occupied.beds.recent']
 }
 
+# 3.5. Create very recent cases data
+# Restrict to since vaccines were reported (last week of May 2021 onward)
+nh_covid_md_very_recent <- subset(nh_covid_md, Week.Ending > as.Date('2021-09-15'))
+
+# Create aggregate variables for recent data
+nh_covid_md_very_recent <- nh_covid_md_very_recent  %>% group_by(Federal.Provider.Number) %>% 
+  # Resident total cases and deaths
+  mutate(total.res.cases.very.recent = sum(Residents.Weekly.Confirmed.COVID.19),
+         total.res.deaths.very.recent = sum(Residents.Weekly.COVID.19.Deaths),
+         # Staff total cases and deaths
+         total.staff.cases.very.recent = sum(Staff.Weekly.Confirmed.COVID.19),
+         total.staff.deaths.very.recent = sum(Staff.Weekly.COVID.19.Deaths),
+         # Current percent of occupied beds
+         avg.number.of.occupied.beds.very.recent = mean(Total.Number.of.Occupied.Beds, na.rm = TRUE))
+
+# Check that new variables are not missing
+verify(nh_covid_md_very_recent, !is.na(total.res.cases.very.recent))
+verify(nh_covid_md_very_recent, !is.na(total.res.deaths.very.recent))
+verify(nh_covid_md_very_recent, !is.na(total.staff.cases.very.recent))
+verify(nh_covid_md_very_recent, !is.na(total.staff.deaths.very.recent))
+verify(nh_covid_md_very_recent, !is.na(avg.number.of.occupied.beds.very.recent))
+
+# Bring nh_covid_md_recent to overall level
+nh_covid_md_very_recent <- nh_covid_md_very_recent %>% group_by(Federal.Provider.Number) %>% filter(row_number() == n())
+nh_covid_md_very_recent <- nh_covid_md_very_recent[, c('Federal.Provider.Number',
+                                             'total.res.cases.very.recent', 'total.res.deaths.very.recent', 'total.staff.cases.very.recent', 
+                                             'total.staff.deaths.very.recent', 'avg.number.of.occupied.beds.very.recent')]
+
+# Loop through to create a percent of cases/death out of the average number of occupied beds
+# To compare nursing homes to each other
+# Recent data
+loop_list_recent <- c('total.staff.cases.very.recent', 'total.res.cases.very.recent', 'total.staff.deaths.very.recent', 'total.res.deaths.very.recent')
+for (i in loop_list_recent) {
+  new_var = paste((i), ".p", sep = '')
+  nh_covid_md_very_recent[, new_var] = nh_covid_md_very_recent[, paste(i)] / nh_covid_md_very_recent[, 'avg.number.of.occupied.beds.very.recent']
+}
+
 # 4. Create all cases data
 # Create aggregate variables
 nh_covid_md <- nh_covid_md %>% group_by(Federal.Provider.Number) %>% 
@@ -167,6 +207,7 @@ for (i in loop_list_base) {
 
 # Join with nh_covid_md_recent
 nh_covid_md_base <- left_join(nh_covid_md_base, nh_covid_md_recent, by = 'Federal.Provider.Number')
+nh_covid_md_base <- left_join(nh_covid_md_base, nh_covid_md_very_recent, by = 'Federal.Provider.Number')
 
 # 5. Create monthly cases data
 # Create temporal average variables
@@ -219,9 +260,21 @@ nh_covid_md_month_all <- nh_covid_md_month %>%
             avg.res.weekly.vaccine.rate = mean(avg.res.weekly.vaccine.rate.month, na.rm = TRUE),
             avg.staff.weekly.vaccine.rate = mean(avg.staff.weekly.vaccine.rate.month, na.rm = TRUE))
 
+# Merge Booster Data
+booster <- booster %>% dplyr::rename(Federal.Provider.Number = `Federal Provider Number`)
+booster$Federal.Provider.Number <- substring(booster$Federal.Provider.Number, 2)
+booster <- booster %>% filter(`Provider State`=='MD')
+booster <- booster %>% mutate(res.boosted = (`Recent Percentage  of Residents who are Fully Vaccinated1` * `Recent Percentage  of Fully Vaccinated Residents who Received a Booster Dose2`)/100,
+                              staff.boosted = (`Recent Percentage of Staff who are Fully Vaccinated3` * `Recent Percentage of Fully Vaccinated Staff who Received a Booster Dose4`)/100)
+booster <- booster %>% dplyr::select(c(Federal.Provider.Number, 
+                                res.boosted,
+                                staff.boosted))
+nh_covid_md_base <- left_join(nh_covid_md_base, booster, by = 'Federal.Provider.Number')
+
 # 7. Export data
 # Export data to tmp folder
 write.csv(nh_covid_md_base, 'tmp/nh_covid_md_base.csv', row.names = FALSE)
 save(nh_covid_md_base, file = 'tmp/nh_covid_md_base.RData')
+save(nh_covid_md_month_all, file = 'tmp/nh_covid_md_month_all.RData')
 write.csv(nh_covid_md_month, 'tmp/nh_covid_md_month.csv', row.names = FALSE)
 write.csv(nh_covid_md, 'tmp/nh_covid_md_week.csv', row.names = FALSE)

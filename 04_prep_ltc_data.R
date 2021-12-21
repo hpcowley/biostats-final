@@ -24,6 +24,7 @@ setwd('/Users/rcorgel/OneDrive - Johns Hopkins/Bios_140.651_Final/Data')
 library('readxl')
 library('ggplot2')
 library('GGally')
+library('dplyr')
 
 ###############################################################################
 # READ DATA
@@ -104,7 +105,16 @@ acs_select['FIPS_nostate'] <- substring(
   acs_select$FIPS.County.Code, 3, length(acs_select$FIPS.County.Code)
 )
 
-acs_subset <- dplyr::select(acs_select, c(FIPS_nostate, pct_poverty))
+acs_subset <- dplyr::select(acs_select, c(FIPS_nostate, pct_poverty, "Geographic Area Name")) 
+
+#Reading in the SSA-FIP Crosswalk.
+ssa <- read.csv("raw/ssa_fips_xwalk_mdonly.csv")
+ssa$FIPS_nostate <- substring(ssa$FIPS.County.Code, 3, length(ssa$FIPS.County.Code))
+ssa <- ssa %>%
+  dplyr::select(c(County.Name, SSACD, FIPS_nostate))
+acs_subset <- left_join(acs_subset, ssa, by = c("FIPS_nostate"))
+
+save(acs_subset, file = 'tmp/acs_subset.RData')
 
 final_join <- data %>%
   left_join(acs_subset, by='FIPS_nostate') %>%
